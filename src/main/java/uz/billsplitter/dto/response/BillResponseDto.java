@@ -2,7 +2,7 @@ package uz.billsplitter.dto.response;
 
 import java.util.List;
 
-public record BillResponse(
+public record BillResponseDto(
         Long totalAmount,
         List<PersonalBillResponse> personalBills
 ) {}

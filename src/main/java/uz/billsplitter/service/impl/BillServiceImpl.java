@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import uz.billsplitter.constant.CommissionType;
 import uz.billsplitter.dto.request.BillRequest;
-import uz.billsplitter.dto.response.BillResponse;
+import uz.billsplitter.dto.response.BillResponseDto;
 import uz.billsplitter.dto.response.PersonalBillResponse;
 import uz.billsplitter.entity.Bill;
 import uz.billsplitter.entity.Item;
@@ -24,7 +24,7 @@ public class BillServiceImpl implements BillService {
     private final BillRepository billRepository;
 
     @Override
-    public BillResponse split(BillRequest request, CommissionType type, long commissionValue) {
+    public BillResponseDto split(BillRequest request, CommissionType type, long commissionValue) {
         List<Item> items = request.getItems().stream()
                 .map(itemMapper::toEntity)
                 .toList();
@@ -52,12 +52,12 @@ public class BillServiceImpl implements BillService {
                 })
                 .toList();
 
-        return new BillResponse(finalTotal, personalBills);
+        return new BillResponseDto(finalTotal, personalBills);
     }
 
     @Override
-    public BillResponse create(BillRequest request, CommissionType type, long commissionValue) {
-        BillResponse response = split(request, type, commissionValue);
+    public BillResponseDto create(BillRequest request, CommissionType type, long commissionValue) {
+        BillResponseDto response = split(request, type, commissionValue);
 
         List<Item> items = request.getItems().stream()
                 .map(itemMapper::toEntity)
@@ -70,14 +70,14 @@ public class BillServiceImpl implements BillService {
     }
 
     @Override
-    public List<BillResponse> findAll() {
+    public List<BillResponseDto> findAll() {
         return billRepository.findAll().stream()
                 .map(this::toResponse)
                 .toList();
     }
 
     @Override
-    public BillResponse findById(Long id) {
+    public BillResponseDto findById(Long id) {
         return billRepository.findById(id)
                 .map(this::toResponse)
                 .orElse(null);
@@ -88,7 +88,7 @@ public class BillServiceImpl implements BillService {
         billRepository.deleteById(id);
     }
 
-    private BillResponse toResponse(Bill bill) {
+    private BillResponseDto toResponse(Bill bill) {
         Map<String, Long> amountByPerson = bill.getItems().stream()
                 .collect(Collectors.groupingBy(
                         i -> i.getPerson().getName(),
@@ -99,6 +99,6 @@ public class BillServiceImpl implements BillService {
                 .map(e -> new PersonalBillResponse(e.getKey(), e.getValue()))
                 .toList();
 
-        return new BillResponse(bill.getTotalAmount(), personalBills);
+        return new BillResponseDto(bill.getTotalAmount(), personalBills);
     }
 }

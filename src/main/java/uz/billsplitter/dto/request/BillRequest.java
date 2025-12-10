@@ -13,6 +13,6 @@ import java.util.List;
 public class BillRequest {
 
     @NotEmpty
-    private List<ItemRequest> items;
+    private List<ItemRequestDto> items;
 
 }
