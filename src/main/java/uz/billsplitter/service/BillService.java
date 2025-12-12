@@ -1,19 +1,23 @@
 package uz.billsplitter.service;
 
-import uz.billsplitter.constant.CommissionType;
-import uz.billsplitter.dto.request.BillRequest;
+import uz.billsplitter.dto.request.BillRequestDto;
 import uz.billsplitter.dto.response.BillResponseDto;
+import uz.billsplitter.entity.Bill;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface BillService {
-    BillResponseDto split(BillRequest request, CommissionType type, long commissionValue);
 
-    BillResponseDto create(BillRequest request, CommissionType type, long commissionValue);
+    List<Bill> getAllBills();
 
-    List<BillResponseDto> findAll();
+    Optional<Bill> getBillById(Long billId);
 
-    BillResponseDto findById(Long id);
+    Bill createBill(BillRequestDto billRequestDto);
 
-    void delete(Long id);
+    Bill updateBill(Long billId, BillRequestDto billRequestDto);
+
+    void deleteBill(Long billId);
+
+    BillResponseDto splitBill(Long billId);
 }

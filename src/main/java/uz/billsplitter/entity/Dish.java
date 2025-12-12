@@ -7,7 +7,7 @@ import lombok.*;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Item {
+public class Dish {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -17,6 +17,8 @@ public class Item {
 
     private Long price;
 
-    @Embedded
+    private boolean isShared;
+
+    @ManyToOne
     private Person person;
 }

@@ -15,9 +15,13 @@ public class Bill {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToMany(cascade = CascadeType.ALL)
-    private List<Item> items;
+    private double serviceFeePercent;
 
-    private Long totalAmount;
+    private double totalAmount;
+
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
+    private List<Dish> dishes;
+
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
+    private List<Person> people;
 }
-

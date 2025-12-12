@@ -1,104 +1,73 @@
 package uz.billsplitter.service.impl;
 
+
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import uz.billsplitter.constant.CommissionType;
-import uz.billsplitter.dto.request.BillRequest;
+import uz.billsplitter.dto.request.BillRequestDto;
 import uz.billsplitter.dto.response.BillResponseDto;
-import uz.billsplitter.dto.response.PersonalBillResponse;
 import uz.billsplitter.entity.Bill;
-import uz.billsplitter.entity.Item;
-import uz.billsplitter.mapper.ItemMapper;
-import uz.billsplitter.service.BillService;
+import uz.billsplitter.mapper.BillMapper;
+import uz.billsplitter.mapper.PersonMapper;
 import uz.billsplitter.repository.BillRepository;
+import uz.billsplitter.repository.PersonRepository;
+import uz.billsplitter.service.BillService;
 
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class BillServiceImpl implements BillService {
 
-    private final ItemMapper itemMapper;
     private final BillRepository billRepository;
+    private final BillMapper billMapper;
+    private final PersonMapper personMapper;
+    private final PersonRepository personRepository;
 
     @Override
-    public BillResponseDto split(BillRequest request, CommissionType type, long commissionValue) {
-        List<Item> items = request.getItems().stream()
-                .map(itemMapper::toEntity)
-                .toList();
-
-        long total = items.stream().mapToLong(Item::getPrice).sum();
-
-        long commission = switch (type) {
-            case PERCENT -> total * commissionValue / 100;
-            case FIXED -> commissionValue;
-        };
-
-        long finalTotal = total + commission;
-
-        Map<String, Long> amountByPerson = items.stream()
-                .collect(Collectors.groupingBy(
-                        i -> i.getPerson().getName(),
-                        Collectors.summingLong(Item::getPrice)
-                ));
-
-        List<PersonalBillResponse> personalBills = amountByPerson.entrySet().stream()
-                .map(e -> {
-                    double share = (double) e.getValue() / total;
-                    long commissionPart = Math.round(commission * share);
-                    return new PersonalBillResponse(e.getKey(), e.getValue() + commissionPart);
-                })
-                .toList();
-
-        return new BillResponseDto(finalTotal, personalBills);
+    public List<Bill> getAllBills() {
+        return billRepository.findAll();
     }
 
     @Override
-    public BillResponseDto create(BillRequest request, CommissionType type, long commissionValue) {
-        BillResponseDto response = split(request, type, commissionValue);
-
-        List<Item> items = request.getItems().stream()
-                .map(itemMapper::toEntity)
-                .toList();
-
-        Bill bill = new Bill(null, items, response.totalAmount());
-        billRepository.save(bill);
-
-        return response;
+    public Optional<Bill> getBillById(Long billId) {
+        return Optional.ofNullable(billRepository.findById(billId)
+                .orElseThrow(() -> new RuntimeException("Bill not found")));
     }
 
     @Override
-    public List<BillResponseDto> findAll() {
-        return billRepository.findAll().stream()
-                .map(this::toResponse)
-                .toList();
+    @Transactional
+    public Bill createBill(BillRequestDto billRequestDto) {
+        Bill bill = billMapper.toEntity(billRequestDto);
+        return billRepository.save(bill);
     }
 
     @Override
-    public BillResponseDto findById(Long id) {
-        return billRepository.findById(id)
-                .map(this::toResponse)
-                .orElse(null);
+    @Transactional
+    public Bill updateBill(Long billId, BillRequestDto billRequestDto) {
+        Optional<Bill> optionalBill = getBillById(billId);
+        if (optionalBill.isEmpty()) return null;
+
+        Bill bill = optionalBill.get();
+        Bill updatedBill = billMapper.toEntity(billRequestDto);
+
+        bill.setServiceFeePercent(updatedBill.getServiceFeePercent());
+        bill.setPeople(updatedBill.getPeople());
+        bill.setDishes(updatedBill.getDishes());
+
+        return billRepository.save(bill);
     }
 
     @Override
-    public void delete(Long id) {
-        billRepository.deleteById(id);
+    @Transactional
+    public void deleteBill(Long billId) {
+        Optional<Bill> optionalBill = getBillById(billId);
+        optionalBill.ifPresent(billRepository::delete);
     }
 
-    private BillResponseDto toResponse(Bill bill) {
-        Map<String, Long> amountByPerson = bill.getItems().stream()
-                .collect(Collectors.groupingBy(
-                        i -> i.getPerson().getName(),
-                        Collectors.summingLong(Item::getPrice)
-                ));
-
-        List<PersonalBillResponse> personalBills = amountByPerson.entrySet().stream()
-                .map(e -> new PersonalBillResponse(e.getKey(), e.getValue()))
-                .toList();
-
-        return new BillResponseDto(bill.getTotalAmount(), personalBills);
+    @Override
+    public BillResponseDto splitBill(Long billId) {
+        return null;
     }
 }
